@@ -124,6 +124,6 @@ class MongoLoader:
 				cursor = self.client[db][sampleCol].find({'userId' : id})
 
 				for rating in cursor:
-					ratings[id].append(Rating(rating['movieId'], rating['value']))
+					ratings[id].append(Rating(int(rating['movieId']), float(rating['value'])))
 
 			return ratings
