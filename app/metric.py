@@ -1,6 +1,20 @@
 def euclidian(x, y):
 	"""
-	
+	Calculates the n-dimensional euclidian distance between x and y.
+
+	Parameters
+	==========
+	x -> [Rating(...)] - A one-dimensional list of Ratings.
+
+	y -> [Rating(...)] - A one-dimensional list of Ratings.
+	==========
+
+	Returns
+	==========
+	A value between 0 and 1 that shows how similar x and y are.
+	1 - equal
+	0 - different
+	==========
 	"""
 	if len(x) == 0 or len(y) == 0:
 		raise KeyError('X and/or Y may not be empty.')
