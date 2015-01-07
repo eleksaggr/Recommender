@@ -1,4 +1,7 @@
 def euclidian(x, y):
+	"""
+	
+	"""
 	if len(x) == 0 or len(y) == 0:
 		raise KeyError('X and/or Y may not be empty.')
 

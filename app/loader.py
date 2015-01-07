@@ -127,3 +127,4 @@ class MongoLoader:
 					ratings[id].append(Rating(int(rating['movieId']), float(rating['value'])))
 
 			return ratings
+			
