@@ -62,6 +62,7 @@ class MongoLoader:
 		except error.InvalidName:
 			raise error.InvalidName('Database or collection do not exist.')
 
+
 		# Add all new Users to the list.
 		self.users += [user['_id'] for user in cursor]
 
@@ -104,7 +105,7 @@ class MongoLoader:
 				raise error.InvalidName('Reference collection does not exist.')
 
 			if sampleCol not in self.client[db].collection_names():
-				raise errors.InvalidName('Sample collection does not exist.')
+				raise error.InvalidName('Sample collection does not exist.')
 
 			if n < 1:
 				raise ValueError('The size of the sample may not be less than 1.')
@@ -120,11 +121,38 @@ class MongoLoader:
 			# Load all ratings for every user in the sample.
 			ratings = {}
 			for id in sample:
-				ratings.setdefault(id, [])
-				cursor = self.client[db][sampleCol].find({'userId' : id})
+			#	ratings.setdefault(id, [])
+			#	cursor = self.client[db][sampleCol].find({'userId' : id})
 
-				for rating in cursor:
-					ratings[id].append(Rating(int(rating['movieId']), float(rating['value'])))
+			#	for rating in cursor:
+			#		ratings[id].append(Rating(int(rating['movieId']), float(rating['value'])))
+
+				ratings.update({id : self.loadById(db, refCol, sampleCol, id)})
 
 			return ratings
 			
+	def loadById(self, db, refCol, sampleCol, targetId):
+		
+		if db not in self.client.database_names():
+			raise error.InvalidName('Database does not exist.')
+
+		if refCol not in self.client[db].collection_names():
+			raise error.InvalidName('Reference collection does not exist.')
+
+		if sampleCol not in self.client[db].collection_names():
+			raise error.InvalidName('Sample collection does not exist.')
+
+		try:
+			self._fetchUsers(db, refCol)
+		except error.InvalidName:
+			raise error.InvalidName('Database or Collection do not exist.')
+
+		if targetId not in self.users:
+			raise ValueError('The user does not exist.')
+
+		ratings = []
+		cursor = self.client[db][sampleCol].find({'userId' : targetId})
+
+		ratings = [Rating(int(rating['movieId']), float(rating['value'])) for rating in cursor]
+
+		return ratings
