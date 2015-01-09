@@ -66,7 +66,7 @@ class MongoLoader:
 		# Add all new Users to the list.
 		self.users += [user['_id'] for user in cursor]
 
-	def loadSample(self, db, refCol, sampleCol, n):
+	def loadSamples(self, db, refCol, sampleCol, n):
 			"""
 			Loads a random sample of ratings from the database db.
 			The entries of refCol are used to select a random sample.
