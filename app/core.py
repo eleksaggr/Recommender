@@ -1,5 +1,6 @@
 from operator import itemgetter
 
+import helper
 import metric
 
 def recommend(population, targetId, similarity=metric.euclidian, k=3):
@@ -44,12 +45,17 @@ def recommend(population, targetId, similarity=metric.euclidian, k=3):
 		raise KeyError('The targeted users ratings must be in the population.')
 
 	for id in population:
+		print("Test")
 
 		# Skip the targeted user
 		if id == targetId:
 			continue
 		# Calculate the similarity between the targeted user and the current user.
-		score = similarity(population[id], population[targetId])
+		try:
+			r = helper.mutualRatings(population[id], population[targetId])
+			score = similarity(r[0], r[1])
+		except ValueError:
+			continue
 
 		# Skip users with a similarity of 0 or less.
 		if score <= 0:
@@ -67,8 +73,8 @@ def recommend(population, targetId, similarity=metric.euclidian, k=3):
 				sumSimilarity.setdefault(rating.movieId, 0)
 				sumSimilarity[rating.movieId] += score
 
-		rankings = [(id, total/sumSimilarity[id]) for id, total in totalScore.items()]
-		rankings = sorted(rankings, reverse=True, key=itemgetter(1))
+	rankings = [(id, total/sumSimilarity[id]) for id, total in totalScore.items()]
+	rankings = sorted(rankings, reverse=True, key=itemgetter(1))
 
-		return rankings[0:k]
+	return rankings[0:k]
 		
