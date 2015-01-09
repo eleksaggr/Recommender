@@ -45,7 +45,6 @@ def recommend(population, targetId, similarity=metric.euclidian, k=3):
 		raise KeyError('The targeted users ratings must be in the population.')
 
 	for id in population:
-		print("Test")
 
 		# Skip the targeted user
 		if id == targetId:

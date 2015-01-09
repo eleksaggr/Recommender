@@ -22,11 +22,13 @@ class LoaderTest(unittest.TestCase):
 	def test_LoadSample(self):
 		l = loader.MongoLoader()
 		
-		r = l.loadSample('development', 'user', 'rating', 150)
+		r = l.loadSamples('development', 'user', 'rating', 1, 'userId', {'_id' : False, 'userId' : False, 'timestamp': False, 'random' : False})
 		self.assertIsNotNone(r)
 
-		self.failUnlessRaises(pymongo.errors.InvalidName, l.loadSample, 'wrong', 'user', 'rating', 150)
+		print(r)
 
-		self.failUnlessRaises(pymongo.errors.InvalidName, l.loadSample, 'development', 'wrong', 'rating', 150)
+		self.failUnlessRaises(pymongo.errors.InvalidName, l.loadSamples, 'wrong', 'user', 'rating', 150, 'userId')
 
-		self.failUnlessRaises(ValueError, l.loadSample, 'development', 'user', 'rating', -1)
+		self.failUnlessRaises(pymongo.errors.InvalidName, l.loadSamples, 'development', 'wrong', 'rating', 150, 'userId')
+
+		self.failUnlessRaises(ValueError, l.loadSamples, 'development', 'user', 'rating', -1, 'userId')

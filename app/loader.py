@@ -4,8 +4,6 @@ import pymongo.errors as error
 from collections import namedtuple
 import random
 
-Rating = namedtuple('Rating', 'movieId, value')
-
 class MongoLoader:
 
 	def __init__(self, host='localhost', port=27017):
@@ -30,19 +28,21 @@ class MongoLoader:
 			raise ValueError('Port is out of range.')
 
 		self.client = mongo.MongoClient(host, port)
-		self.users = []
+		self.refs = []
 
-	def _fetchUsers(self, db, collection):
+	def _fetchRefs(self, db, collection, criteria):
 		"""
-		Fetches user ids from the specified collection and adds them to self.users.
+		Fetches reference ids from the specified collection and adds them to self.refs.
 		Should this have already happened before, this will only add ids higher
 		than the highest id yet loaded.
 
 		Parameters
 		==========
-		db -> String: The name of the database the users are fetched from.
+		db -> String: The name of the database the references are fetched from.
 
-		collection -> String: The name of the collection the users are fetched from.
+		collection -> String: The name of the collection the reference are fetched from.
+
+		criteria -> String: The critiera to filter with.
 		==========
 
 		Throws
@@ -50,23 +50,23 @@ class MongoLoader:
 		InvalidName: If the specified database or collection do not exist.
 		==========
 		"""
-		# Load existing user ids into users list.
-		if len(self.users) == 0:
+		# Load existing user ids into references list.
+		if len(self.refs) == 0:
 			maxId = 0
 		else:
-			# If we already have users, fetch all that have a higher id than the last one in the list.
-			maxId = self.users[-1]
+			# If we already have refs, fetch all that have a higher id than the last one in the list.
+			maxId = self.refs[-1]
 
 		try:
-			cursor = self.client[db][collection].find({'_id' : {'$gt' : maxId}})
+			cursor = self.client[db][collection].find({criteria : {'$gt' : maxId}})
 		except error.InvalidName:
 			raise error.InvalidName('Database or collection do not exist.')
 
 
-		# Add all new Users to the list.
-		self.users += [user['_id'] for user in cursor]
+		# Add all new references to the list.
+		self.refs += [ref[criteria] for ref in cursor]
 
-	def loadSamples(self, db, refCol, sampleCol, n):
+	def loadSamples(self, db, refCol, sampleCol, n, criteria, constraints={}):
 			"""
 			Loads a random sample of ratings from the database db.
 			The entries of refCol are used to select a random sample.
@@ -81,6 +81,10 @@ class MongoLoader:
 
 			sampleCol -> String: The name of the sample collection.
 
+			criteria -> String: The criteria by which to filter the items.
+
+			constraints -> {}: A dictionary cotaining fields that should not be loaded.
+
 			n -> int: The size of the random sample taken from refCol.
 			==========
 
@@ -94,7 +98,7 @@ class MongoLoader:
 			Returns
 			==========
 			A dictionary with the following structure:
-			{'userId' : [Rating(...)]}
+			{'criteria' : [item]}
 			==========
 			"""
 
@@ -111,48 +115,62 @@ class MongoLoader:
 				raise ValueError('The size of the sample may not be less than 1.')
 
 			try:
-				self._fetchUsers(db, refCol)
+				# Should not always be _id.
+				self._fetchRefs(db, refCol, '_id')
 			except error.InvalidName:
 				raise error.InvalidName('Database or Collection do not exist.')
 
-			# Take a random sample of size n from the user list.
-			sample = random.sample(self.users, n)
+			# Take a random sample of size n from the reference list.
+			sample = random.sample(self.refs, n)
 
-			# Load all ratings for every user in the sample.
-			ratings = {}
+			# Load all items for every reference item in the sample.
+			items = {}
 			for id in sample:
-			#	ratings.setdefault(id, [])
-			#	cursor = self.client[db][sampleCol].find({'userId' : id})
+				items.update({id : self.loadById(db, sampleCol, id, criteria, constraints)})
 
-			#	for rating in cursor:
-			#		ratings[id].append(Rating(int(rating['movieId']), float(rating['value'])))
-
-				ratings.update({id : self.loadById(db, refCol, sampleCol, id)})
-
-			return ratings
+			return items
 			
-	def loadById(self, db, refCol, sampleCol, targetId):
-		
+	def loadById(self, db, sampleCol, targetId, criteria, constraints={}):
+		"""
+		Loads all entries from the sampleCol collection with the property:
+			criteria = targetId
+
+		Parameters
+		==========
+		db -> String: The name of the database to perform this operation on.
+
+		sampleCol -> String: The name of the collection that contains the sample data.
+
+		criteria -> String: The critiera field that is used to filter the items.
+
+		constraints -> {}: A dictionary cotaining fields that should not be loaded.
+
+		targetId -> int: The id of the target.
+		==========
+
+		Throws
+		==========
+		InvalidName: If the database, or the sampleCol do not exist.
+
+		ValueError: If the target with the id targetId does not exist in the
+					references list.
+		==========
+
+		Returns
+		==========
+		A list of items fetched for the specified id.
+		==========
+		"""
 		if db not in self.client.database_names():
 			raise error.InvalidName('Database does not exist.')
-
-		if refCol not in self.client[db].collection_names():
-			raise error.InvalidName('Reference collection does not exist.')
 
 		if sampleCol not in self.client[db].collection_names():
 			raise error.InvalidName('Sample collection does not exist.')
 
-		try:
-			self._fetchUsers(db, refCol)
-		except error.InvalidName:
-			raise error.InvalidName('Database or Collection do not exist.')
+		if targetId not in self.refs:
+			raise ValueError('The reference does not exist.')
 
-		if targetId not in self.users:
-			raise ValueError('The user does not exist.')
+		cursor = self.client[db][sampleCol].find({criteria : targetId}, constraints)
+		items = [item for item in cursor]
 
-		ratings = []
-		cursor = self.client[db][sampleCol].find({'userId' : targetId})
-
-		ratings = [Rating(int(rating['movieId']), float(rating['value'])) for rating in cursor]
-
-		return ratings
+		return items
