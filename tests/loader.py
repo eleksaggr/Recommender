@@ -40,27 +40,27 @@ class LoaderTest(unittest.TestCase):
 		# Check if wrong collection is being caught.
 		self.failUnlessRaises(pymongo.errors.InvalidName, l.fetchRefs, 'development', 'wrong', '_id')
 
-	def test_LoadById(self):
+	def test_LoadDataset(self):
 		l = loader.MongoLoader()
 
 		r = l.fetchRefs('development', 'user', '_id')
 
 		# Try getting all ratings from the user with the id 1, without any constraints.
-		r = l.loadById('development', 'rating', 1, 'userId')
+		r = l.loadDataset('development', 'rating', 1, 'userId')
 		self.assertNotEqual(0, len(r[0]))
 
 		# Check whether only the right fields are being returned.
-		r = l.loadById('development', 'rating', 1, 'userId',  {'_id' : False, 'userId' : False, 'timestamp': False, 'random' : False})
+		r = l.loadDataset('development', 'rating', 1, 'userId',  {'_id' : False, 'userId' : False, 'timestamp': False, 'random' : False})
 		self.assertEqual(2, len(r[0]))
 
 		# Check if wrong database is being caught.
-		self.failUnlessRaises(pymongo.errors.InvalidName, l.loadById, 'wrong', 'rating', 1, 'userId')
+		self.failUnlessRaises(pymongo.errors.InvalidName, l.loadDataset, 'wrong', 'rating', 1, 'userId')
 
 		# Check if wrong collection is being caught.
-		self.failUnlessRaises(pymongo.errors.InvalidName, l.loadById, 'development', 'wrong', 1, 'userId')
+		self.failUnlessRaises(pymongo.errors.InvalidName, l.loadDataset, 'development', 'wrong', 1, 'userId')
 
 		# Check if user that hasnt been loaded is being caught.
-		self.failUnlessRaises(ValueError, l.loadById, 'development', 'rating', -1, 'userId')
+		self.failUnlessRaises(ValueError, l.loadDataset, 'development', 'rating', -1, 'userId')
 
 	def test_LoadSample(self):
 		l = loader.MongoLoader()
