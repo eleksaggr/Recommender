@@ -10,8 +10,10 @@ class CoreTest(unittest.TestCase):
 	def test_Recommend(self):
 		ml = loader.MongoLoader()
 
-		p = ml.loadSamples('development', 'user', 'rating', 100, 'userId', {'_id' : False, 'userId' : False, 'timestamp': False, 'random' : False} )
-		p.update({1 : ml.loadById('development', 'rating', 10, 'userId', {'_id' : False, 'userId' : False, 'timestamp': False, 'random' : False})})
+		ml.fetchRefs('development', 'user', '_id')
+
+		p = ml.loadSamples('development', 'rating', 100, 'userId', {'_id' : False, 'userId' : False, 'timestamp': False, 'random' : False} )
+		p.update({1 : ml.loadDataset('development', 'rating', 10, 'userId', {'_id' : False, 'userId' : False, 'timestamp': False, 'random' : False})})
 
 		p = transform.toRatings(p)
 
